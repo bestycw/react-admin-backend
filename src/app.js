@@ -10,6 +10,7 @@ require('dotenv').config();
 
 const errorHandler = require('./middleware/errorHandler');
 const routes = require('./routes');
+const db = require('./models');
 
 const app = express();
 const server = http.createServer(app);
@@ -99,15 +100,29 @@ app.use('/api', routes(app));
 
 // 错误处理
 app.use(errorHandler);
-// JSON 和 URL-encoded 解析放在路由之后，这样不会影响文件上传
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+
+// 404 处理
+app.use((req, res) => {
+  res.status(404).json({
+    code: 404,
+    message: '接口不存在'
+  });
+});
+
+// 启动服务器
 const PORT = process.env.PORT || 3000;
 
-server.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
-  console.log(`WebSocket server is running on ws://localhost:${PORT}/ws`);
-  console.log(`Socket.IO server is running on ws://localhost:${PORT}/socket.io`);
-});
+// 同步数据库并启动服务器
+db.sequelize.sync({ alter: true })
+  .then(() => {
+    server.listen(PORT, () => {
+      console.log(`Server is running on port ${PORT}`);
+      console.log(`WebSocket server is running on ws://localhost:${PORT}/ws`);
+      console.log(`Socket.IO server is running on ws://localhost:${PORT}/socket.io`);
+    });
+  })
+  .catch(err => {
+    console.error('Unable to sync database:', err);
+  });
 
 module.exports = app; 

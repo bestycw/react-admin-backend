@@ -1,6 +1,6 @@
 const express = require('express');
 const jwt = require('jsonwebtoken');
-const User = require('../models/user.model');
+const { User } = require('../models');
 const { auth } = require('../middleware/auth.middleware');
 
 const router = express.Router();
@@ -12,7 +12,7 @@ router.post('/login', async (req, res) => {
     const { username, password } = req.body;
 
     // 查找用户
-    const user = await User.findOne({ username });
+    const user = await User.findOne({ where: { username } });
     if (!user) {
       return res.status(401).json({
         code: 401,
@@ -43,7 +43,7 @@ router.post('/login', async (req, res) => {
 
     // 生成 token
     const token = jwt.sign(
-      { id: user._id, role: user.role },
+      { id: user.id, role: user.role },
       JWT_SECRET,
       { expiresIn: '24h' }
     );
@@ -85,9 +85,17 @@ router.post('/logout', auth, async (req, res) => {
 // 获取当前用户信息
 router.get('/me', auth, async (req, res) => {
   try {
+    const user = await User.findByPk(req.user.id);
+    if (!user) {
+      return res.status(404).json({
+        code: 404,
+        message: '用户不存在'
+      });
+    }
+
     res.json({
       code: 200,
-      data: req.user,
+      data: user.toJSON(),
       message: '获取成功'
     });
   } catch (error) {
@@ -103,7 +111,7 @@ router.get('/me', auth, async (req, res) => {
 router.post('/change-password', auth, async (req, res) => {
   try {
     const { oldPassword, newPassword } = req.body;
-    const user = req.user;
+    const user = await User.findByPk(req.user.id);
 
     // 验证旧密码
     const isMatch = await user.comparePassword(oldPassword);

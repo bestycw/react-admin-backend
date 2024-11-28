@@ -1,5 +1,5 @@
 const jwt = require('jsonwebtoken');
-const User = require('../models/user.model');
+const { User } = require('../models');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
 
@@ -12,7 +12,12 @@ const auth = async (req, res, next) => {
     }
 
     const decoded = jwt.verify(token, JWT_SECRET);
-    const user = await User.findOne({ _id: decoded.id, status: 'active' });
+    const user = await User.findOne({
+      where: {
+        id: decoded.id,
+        status: 'active'
+      }
+    });
 
     if (!user) {
       throw new Error();
