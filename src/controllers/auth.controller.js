@@ -2,6 +2,7 @@ const db = require('../models');
 const { User } = db;
 const { Op } = db.Sequelize;
 const { sendVerificationCode, verifyCode } = require('../services/sms.service');
+const avatarService = require('../services/avatar.service');
 
 exports.register = async (req, res) => {
   try {
@@ -114,6 +115,52 @@ exports.resetPassword = async (req, res) => {
     res.status(500).json({ 
       code: 500,
       message: '密码重置失败，请稍后重试' 
+    });
+  }
+};
+
+exports.uploadAvatar = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({
+        code: 400,
+        message: 'No file uploaded'
+      });
+    }
+
+    // 处理头像
+    const avatarUrl = await avatarService.processAvatar(req.file);
+
+    // 获取用户
+    const user = await User.findByPk(req.user.id);
+    if (!user) {
+      return res.status(404).json({
+        code: 404,
+        message: 'User not found'
+      });
+    }
+
+    // 删除旧头像
+    if (user.avatar) {
+      await avatarService.deleteOldAvatar(user.avatar);
+    }
+
+    // 更新用户头像
+    user.avatar = avatarUrl;
+    await user.save();
+
+    res.json({
+      code: 200,
+      data: {
+        url: avatarUrl
+      },
+      message: 'Avatar uploaded successfully'
+    });
+  } catch (error) {
+    console.error('Upload avatar error:', error);
+    res.status(500).json({
+      code: 500,
+      message: 'Failed to upload avatar'
     });
   }
 }; 

@@ -56,6 +56,37 @@ module.exports = (sequelize, DataTypes) => {
     lastLogin: {
       type: DataTypes.DATE,
       defaultValue: DataTypes.NOW
+    },
+    gender: {
+      type: DataTypes.ENUM('male', 'female', 'other'),
+      allowNull: true
+    },
+    birthday: {
+      type: DataTypes.DATE,
+      allowNull: true
+    },
+    location: {
+      type: DataTypes.STRING,
+      allowNull: true
+    },
+    company: {
+      type: DataTypes.STRING,
+      allowNull: true
+    },
+    position: {
+      type: DataTypes.STRING,
+      allowNull: true
+    },
+    website: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      validate: {
+        isUrl: true
+      }
+    },
+    bio: {
+      type: DataTypes.TEXT,
+      allowNull: true
     }
   }, {
     hooks: {

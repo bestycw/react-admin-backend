@@ -3,6 +3,7 @@ const jwt = require('jsonwebtoken');
 const { User } = require('../models');
 const { auth } = require('../middleware/auth.middleware');
 const { Op } = require('sequelize');
+const upload = require('../middleware/upload.middleware');
 
 const router = express.Router();
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
@@ -168,5 +169,90 @@ router.post('/change-password', auth, async (req, res) => {
 
 // 重置密码
 router.post('/reset-password', authController.resetPassword);
+
+// 头像上传
+router.post('/upload-avatar', auth, upload.single('avatar'), (req, res, next) => {
+  console.log('Upload request received:', {
+    file: req.file,
+    body: req.body,
+    headers: req.headers
+  });
+  next();
+}, authController.uploadAvatar);
+
+// 更新个人信息
+router.put('/profile', auth, async (req, res) => {
+  try {
+    const user = await User.findByPk(req.user.id);
+    if (!user) {
+      return res.status(404).json({
+        code: 404,
+        message: '用户不存在'
+      });
+    }
+
+    // 只允许更新特定字段
+    const allowedFields = ['email', 'mobile', 'avatar', 'gender', 'birthday', 'location', 'company', 'position', 'website', 'bio'];
+    const updateData = {};
+    
+    allowedFields.forEach(field => {
+      if (req.body[field] !== undefined) {
+        updateData[field] = req.body[field];
+      }
+    });
+
+    // 如果要更新手机号，检查是否已被使用
+    if (updateData.mobile) {
+      const existingUser = await User.findOne({
+        where: {
+          mobile: updateData.mobile,
+          id: { [Op.ne]: user.id } // 排除当前用户
+        }
+      });
+      if (existingUser) {
+        return res.status(400).json({
+          code: 400,
+          message: '手机号已被使用'
+        });
+      }
+    }
+
+    // 如果要更新邮箱，检查是否已被使用
+    if (updateData.email) {
+      const existingUser = await User.findOne({
+        where: {
+          email: updateData.email,
+          id: { [Op.ne]: user.id } // 排除当前用户
+        }
+      });
+      if (existingUser) {
+        return res.status(400).json({
+          code: 400,
+          message: '邮箱已被使用'
+        });
+      }
+    }
+
+    await user.update(updateData);
+
+    // 只返回更新的字段和必要的用户信息
+    const responseData = {
+      ...user.toJSON(),
+      ...updateData
+    };
+
+    res.json({
+      code: 200,
+      data: responseData,
+      message: '更新成功'
+    });
+  } catch (error) {
+    console.error('Update profile error:', error);
+    res.status(500).json({
+      code: 500,
+      message: '服务器错误'
+    });
+  }
+});
 
 module.exports = router; 
