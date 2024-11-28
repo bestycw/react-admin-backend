@@ -35,30 +35,37 @@ exports.sendVerificationCode = async (mobile, type) => {
 
 // 验证验证码
 exports.verifyCode = (mobile, code, type) => {
-    const storedData = verificationCodes.get(mobile);
-    
-    if (!storedData) {
-        return false;
-    }
+  console.log('Verifying code:', { mobile, code, type }); // 添加日志
+  console.log('Stored codes:', verificationCodes); // 添加日志
 
-    // 验证码是否过期
-    if (Date.now() > storedData.expiry) {
-        verificationCodes.delete(mobile);
-        return false;
-    }
+  const storedData = verificationCodes.get(mobile);
+  
+  if (!storedData) {
+    console.log('No stored code found for mobile:', mobile);
+    return false;
+  }
 
-    // 验证码类型是否匹配
-    if (storedData.type !== type) {
-        return false;
-    }
+  // 验证码是否过期
+  if (Date.now() > storedData.expiry) {
+    console.log('Code expired. Current time:', Date.now(), 'Expiry:', storedData.expiry);
+    verificationCodes.delete(mobile);
+    return false;
+  }
 
-    // 验证码是否正确
-    const isValid = storedData.code === code;
+  // 验证码类型是否匹配
+  if (storedData.type !== type) {
+    console.log('Code type mismatch. Expected:', type, 'Got:', storedData.type);
+    return false;
+  }
 
-    // 验证成功后删除验证码
-    if (isValid) {
-        verificationCodes.delete(mobile);
-    }
+  // 验证码是否正确
+  const isValid = storedData.code === code;
+  console.log('Code validation result:', isValid);
 
-    return isValid;
+  // 验证成功后删除验证码
+  if (isValid) {
+    verificationCodes.delete(mobile);
+  }
+
+  return isValid;
 }; 

@@ -73,4 +73,47 @@ exports.sendVerificationCode = async (req, res) => {
       message: '发送验证码失败' 
     });
   }
+};
+
+exports.resetPassword = async (req, res) => {
+  try {
+    const { mobile, verificationCode, newPassword } = req.body;
+    console.log('Reset password request:', { mobile, verificationCode });
+
+    // 验证验证码
+    if (!verifyCode(mobile, verificationCode, 'reset')) {
+      console.log('Verification code invalid or expired');
+      return res.status(400).json({ 
+        code: 400,
+        message: '验证码错误或已过期' 
+      });
+    }
+
+    // 查找用户
+    const user = await User.findOne({ 
+      where: { mobile } 
+    });
+
+    if (!user) {
+      return res.status(404).json({ 
+        code: 404,
+        message: '用户不存在' 
+      });
+    }
+
+    // 更新密码
+    user.password = newPassword;
+    await user.save();
+
+    res.json({ 
+      code: 200,
+      message: '密码重置成功' 
+    });
+  } catch (error) {
+    console.error('Reset password error:', error);
+    res.status(500).json({ 
+      code: 500,
+      message: '密码重置失败，请稍后重试' 
+    });
+  }
 }; 

@@ -2,6 +2,7 @@ const express = require('express');
 const jwt = require('jsonwebtoken');
 const { User } = require('../models');
 const { auth } = require('../middleware/auth.middleware');
+const { Op } = require('sequelize');
 
 const router = express.Router();
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
@@ -16,9 +17,25 @@ router.post('/send-code', authController.sendVerificationCode);
 router.post('/login', async (req, res) => {
   try {
     const { username, password } = req.body;
+    console.log('Login attempt:', { username });
 
-    // 查找用户
-    const user = await User.findOne({ where: { username } });
+    // 查找用户 - 支持用户名或手机号登录
+    const user = await User.findOne({ 
+      where: { 
+        [Op.or]: [
+          { username },
+          { mobile: username }
+        ]
+      } 
+    });
+
+    console.log('Found user:', user ? {
+      id: user.id,
+      username: user.username,
+      mobile: user.mobile,
+      status: user.status
+    } : 'No user found');
+
     if (!user) {
       return res.status(401).json({
         code: 401,
@@ -28,6 +45,8 @@ router.post('/login', async (req, res) => {
 
     // 验证密码
     const isMatch = await user.comparePassword(password);
+    console.log('Password match:', isMatch);
+
     if (!isMatch) {
       return res.status(401).json({
         code: 401,
@@ -36,6 +55,8 @@ router.post('/login', async (req, res) => {
     }
 
     // 检查用户状态
+    console.log('User status:', user.status);
+
     if (user.status !== 'active') {
       return res.status(401).json({
         code: 401,
@@ -144,5 +165,8 @@ router.post('/change-password', auth, async (req, res) => {
     });
   }
 });
+
+// 重置密码
+router.post('/reset-password', authController.resetPassword);
 
 module.exports = router; 
