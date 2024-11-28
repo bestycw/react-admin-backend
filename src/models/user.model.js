@@ -17,29 +17,45 @@ module.exports = (sequelize, DataTypes) => {
         len: [6, 100]
       }
     },
+    mobile: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      unique: true,
+      validate: {
+        is: /^1[3-9]\d{9}$/
+      }
+    },
     email: {
       type: DataTypes.STRING,
-      allowNull: false,
+      allowNull: true,
       unique: true,
       validate: {
         isEmail: true
       }
     },
-    role: {
-      type: DataTypes.ENUM('admin', 'user'),
-      defaultValue: 'user'
+    roles: {
+      type: DataTypes.ARRAY(DataTypes.STRING),
+      defaultValue: ['user']
+    },
+    permissions: {
+      type: DataTypes.ARRAY(DataTypes.STRING),
+      defaultValue: []
+    },
+    dynamicRoutesList: {
+      type: DataTypes.ARRAY(DataTypes.STRING),
+      defaultValue: []
     },
     avatar: {
       type: DataTypes.STRING,
       defaultValue: ''
     },
     status: {
-      type: DataTypes.ENUM('active', 'inactive'),
+      type: DataTypes.ENUM('active', 'inactive', 'banned'),
       defaultValue: 'active'
     },
     lastLogin: {
       type: DataTypes.DATE,
-      defaultValue: null
+      defaultValue: DataTypes.NOW
     }
   }, {
     hooks: {

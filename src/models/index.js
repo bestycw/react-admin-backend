@@ -55,4 +55,7 @@ Object.keys(db).forEach(modelName => {
 db.sequelize = sequelize;
 db.Sequelize = Sequelize;
 
+// 在同步之前先打印模型结构
+console.log('User Model:', db.User.rawAttributes);
+
 module.exports = db; 

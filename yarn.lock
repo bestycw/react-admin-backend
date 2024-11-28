@@ -38,6 +38,13 @@
   dependencies:
     "undici-types" "~6.20.0"
 
+"@types/nodemailer@^6.4.17":
+  "integrity" "sha512-I9CCaIp6DTldEg7vyUTZi8+9Vo0hi1/T8gv3C89yk1rSAAzoKQ8H8ki/jBYJSFoH/BisgLP8tkZMlQ91CIquww=="
+  "resolved" "https://registry.npmmirror.com/@types/nodemailer/-/nodemailer-6.4.17.tgz"
+  "version" "6.4.17"
+  dependencies:
+    "@types/node" "*"
+
 "@types/validator@^13.7.17":
   "integrity" "sha512-6SlHBzUW8Jhf3liqrGGXyTJSIFe4nqlJ5A5KaMZ2l/vbM3Wh3KSybots/wfWVzNLK4D1NZluDlSQIbIEPx6oyA=="
   "resolved" "https://registry.npmmirror.com/@types/validator/-/validator-13.12.2.tgz"
@@ -745,6 +752,11 @@
   "integrity" "sha512-+EUsqGPLsM+j/zdChZjsnX51g4XrHFOIXwfnCVPGlQk/k5giakcKsuxCObBRu6DSm9opw/O6slWbJdghQM4bBg=="
   "resolved" "https://registry.npmmirror.com/negotiator/-/negotiator-0.6.3.tgz"
   "version" "0.6.3"
+
+"nodemailer@^6.9.16":
+  "integrity" "sha512-psAuZdTIRN08HKVd/E8ObdV6NO7NTBY3KsC30F7M4H1OnmLCUNaS56FpYxyb26zWLSyYF9Ozch9KYHhHegsiOQ=="
+  "resolved" "https://registry.npmmirror.com/nodemailer/-/nodemailer-6.9.16.tgz"
+  "version" "6.9.16"
 
 "nodemon@^2.0.20":
   "integrity" "sha512-B8YqaKMmyuCO7BowF1Z1/mkPqLk6cs/l63Ojtd6otKjMx47Dq1utxfRxcavH1I7VSaL8n5BUaoutadnsX3AAVQ=="

@@ -5,7 +5,13 @@ const { auth } = require('../middleware/auth.middleware');
 
 const router = express.Router();
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
+const authController = require('../controllers/auth.controller');
 
+// ... 其他路由
+
+// 注册相关路由
+router.post('/register', authController.register);
+router.post('/send-code', authController.sendVerificationCode);
 // 登录
 router.post('/login', async (req, res) => {
   try {
