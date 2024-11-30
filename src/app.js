@@ -98,8 +98,14 @@ wss.on('connection', (ws) => {
 // 路由
 app.use('/api', routes(app));
 
-// 错误处理
-app.use(errorHandler);
+// 添加错误处理中间件
+app.use((err, req, res, next) => {
+  console.error('Error:', err);
+  res.status(500).json({
+    success: false,
+    message: err.message || '服务器错误'
+  });
+});
 
 // 404 处理
 app.use((req, res) => {

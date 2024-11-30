@@ -3,6 +3,8 @@ const { User } = db;
 const { Op } = db.Sequelize;
 const { sendVerificationCode, verifyCode } = require('../services/sms.service');
 const avatarService = require('../services/avatar.service');
+const jwt = require('jsonwebtoken');
+const config = require('../config/auth.config');
 
 exports.register = async (req, res) => {
   try {
@@ -162,5 +164,29 @@ exports.uploadAvatar = async (req, res) => {
       code: 500,
       message: 'Failed to upload avatar'
     });
+  }
+};
+
+exports.login = async (req, res) => {
+  try {
+    // ... 验证用户名密码逻辑 ...
+
+    const token = jwt.sign(
+      { id: user.id },
+      config.secret,
+      { expiresIn: config.jwtExpiration }
+    );
+
+    res.json({
+      success: true,
+      data: {
+        token,
+        user: {
+          // ... 用户信息
+        }
+      }
+    });
+  } catch (error) {
+    // ... 错误处理
   }
 }; 
