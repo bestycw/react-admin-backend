@@ -20,7 +20,6 @@ router.post('/login', async (req, res) => {
     const { username, password } = req.body;
     console.log('Login attempt:', { username });
 
-    // 查找用户 - 支持用户名或手机号登录
     const user = await User.findOne({ 
       where: { 
         [Op.or]: [
@@ -30,33 +29,12 @@ router.post('/login', async (req, res) => {
       } 
     });
 
-    console.log('Found user:', user ? {
-      id: user.id,
-      username: user.username,
-      mobile: user.mobile,
-      status: user.status
-    } : 'No user found');
-
-    if (!user) {
+    if (!user || !(await user.comparePassword(password))) {
       return res.status(401).json({
         code: 401,
         message: '用户名或密码错误'
       });
     }
-
-    // 验证密码
-    const isMatch = await user.comparePassword(password);
-    console.log('Password match:', isMatch);
-
-    if (!isMatch) {
-      return res.status(401).json({
-        code: 401,
-        message: '用户名或密码错误'
-      });
-    }
-
-    // 检查用户状态
-    console.log('User status:', user.status);
 
     if (user.status !== 'active') {
       return res.status(401).json({
@@ -69,18 +47,37 @@ router.post('/login', async (req, res) => {
     user.lastLogin = new Date();
     await user.save();
 
-    // 生成 token
+    // 生成 token 对
     const token = jwt.sign(
-      { id: user.id, role: user.role },
+      { id: user.id },
       JWT_SECRET,
-      { expiresIn: '24h' }
+      { expiresIn: '2h' }
     );
 
+    const refreshToken = jwt.sign(
+      { id: user.id },
+      JWT_SECRET,
+      { expiresIn: '7d' }
+    );
+
+    // 确保返回格式与前端接口定义匹配
     res.json({
       code: 200,
       data: {
         token,
-        user: user.toJSON()
+        refreshToken,
+        expiresIn: 7200, // 2小时 = 7200秒
+        user: {
+          id: user.id,
+          username: user.username,
+          email: user.email,
+          roles: user.roles,
+          permissions: user.permissions,
+          dynamicRoutesList: user.dynamicRoutesList,
+          avatar: user.avatar,
+          status: user.status,
+          lastLogin: user.lastLogin
+        }
       },
       message: '登录成功'
     });
@@ -254,5 +251,53 @@ router.put('/profile', auth, async (req, res) => {
     });
   }
 });
+
+// 刷新 token
+router.post('/refresh-token', async (req, res) => {
+  try {
+    const { refreshToken } = req.body;
+    
+    // 验证 refresh token
+    const decoded = jwt.verify(refreshToken, JWT_SECRET);
+    const user = await User.findByPk(decoded.id);
+
+    if (!user) {
+      return res.status(401).json({
+        code: 401,
+        message: 'Invalid refresh token'
+      });
+    }
+
+    // 生成新的 token 对
+    const newToken = jwt.sign(
+      { id: user.id, role: user.role },
+      JWT_SECRET,
+      { expiresIn: '2h' }
+    );
+
+    const newRefreshToken = jwt.sign(
+      { id: user.id },
+      JWT_SECRET,
+      { expiresIn: '7d' }
+    );
+
+    res.json({
+      code: 200,
+      data: {
+        token: newToken,
+        refreshToken: newRefreshToken,
+        expiresIn: 7200 // 2小时
+      }
+    });
+  } catch (error) {
+    res.status(401).json({
+      code: 401,
+      message: 'Invalid refresh token'
+    });
+  }
+});
+
+// 需要添加登出路由
+// router.post('/logout', authJwt.verifyToken, authController.logout);
 
 module.exports = router; 

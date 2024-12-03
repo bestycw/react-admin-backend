@@ -14,7 +14,7 @@ async function initAdmin() {
       username: 'admin',
       password: '123456',
       email: 'admin@example.com',
-      role: 'admin',
+      roles: ['admin'],
       status: 'active',
       avatar: 'https://gw.alipayobjects.com/zos/rmsportal/BiazfanxmamNRoxxVxka.png'
     });

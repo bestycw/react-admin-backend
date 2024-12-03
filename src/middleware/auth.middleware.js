@@ -37,7 +37,7 @@ const auth = async (req, res, next) => {
 // 角色验证中间件
 const checkRole = (roles) => {
   return (req, res, next) => {
-    if (!roles.includes(req.user.role)) {
+    if (!req.user.roles.some(userRole => roles.includes(userRole))) {
       return res.status(403).json({
         code: 403,
         message: '没有权限访问'

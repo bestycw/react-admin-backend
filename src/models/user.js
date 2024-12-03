@@ -41,6 +41,10 @@ module.exports = (sequelize, DataTypes) => {
     lastLogin: {
       type: DataTypes.DATE,
       defaultValue: null
+    },
+    roles: {
+      type: DataTypes.ARRAY(DataTypes.STRING),
+      defaultValue: ['user']
     }
   }, {
     tableName: 'users',

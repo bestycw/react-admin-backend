@@ -11,6 +11,7 @@ require('dotenv').config();
 const errorHandler = require('./middleware/errorHandler');
 const routes = require('./routes');
 const db = require('./models');
+const userRoutes = require('./routes/user.routes');
 
 const app = express();
 const server = http.createServer(app);
@@ -97,6 +98,7 @@ wss.on('connection', (ws) => {
 
 // 路由
 app.use('/api', routes(app));
+app.use('/api/users', userRoutes);
 
 // 添加错误处理中间件
 app.use((err, req, res, next) => {
@@ -118,9 +120,10 @@ app.use((req, res) => {
 // 启动服务器
 const PORT = process.env.PORT || 3000;
 
-// 同步数据库并启动服务器
-db.sequelize.sync({ alter: true })
+// 临时使用 force 选项重建表
+db.sequelize.sync({ force: true })
   .then(() => {
+    console.log('Database synced');
     server.listen(PORT, () => {
       console.log(`Server is running on port ${PORT}`);
       console.log(`WebSocket server is running on ws://localhost:${PORT}/ws`);

@@ -174,13 +174,21 @@ exports.login = async (req, res) => {
     const token = jwt.sign(
       { id: user.id },
       config.secret,
-      { expiresIn: config.jwtExpiration }
+      { expiresIn: '2h' }
+    );
+
+    const refreshToken = jwt.sign(
+      { id: user.id },
+      config.secret,
+      { expiresIn: '7d' }
     );
 
     res.json({
-      success: true,
+      code: 200,
       data: {
         token,
+        refreshToken,
+        expiresIn: 7200, // 2小时
         user: {
           // ... 用户信息
         }
@@ -188,5 +196,21 @@ exports.login = async (req, res) => {
     });
   } catch (error) {
     // ... 错误处理
+  }
+};
+
+exports.logout = async (req, res) => {
+  try {
+    // 可以在这里处理token黑名单等逻辑
+    res.json({
+      code: 200,
+      message: '登出成功'
+    });
+  } catch (error) {
+    console.error('Logout error:', error);
+    res.status(500).json({
+      code: 500,
+      message: '登出失败'
+    });
   }
 }; 
