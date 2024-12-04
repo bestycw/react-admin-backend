@@ -12,6 +12,7 @@ const errorHandler = require('./middleware/errorHandler');
 const routes = require('./routes');
 const db = require('./models');
 const userRoutes = require('./routes/user.routes');
+const roleRoutes = require('./routes/role.routes');
 
 const app = express();
 const server = http.createServer(app);
@@ -99,6 +100,7 @@ wss.on('connection', (ws) => {
 // 路由
 app.use('/api', routes(app));
 app.use('/api/users', userRoutes);
+app.use('/', roleRoutes);
 
 // 添加错误处理中间件
 app.use((err, req, res, next) => {

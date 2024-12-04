@@ -1,5 +1,5 @@
 const db = require('../models');
-const { User } = db;
+const { User, Role } = db;
 const { Op } = db.Sequelize;
 const { sendVerificationCode, verifyCode } = require('../services/sms.service');
 const avatarService = require('../services/avatar.service');
@@ -169,33 +169,42 @@ exports.uploadAvatar = async (req, res) => {
 
 exports.login = async (req, res) => {
   try {
-    // ... 验证用户名密码逻辑 ...
+    const { username, password } = req.body;
+    const user = await User.findOne({ 
+      where: { username },
+      include: [{
+        model: Role,
+        as: 'userRoles',
+        attributes: ['permissions', 'dynamicRoutesList']
+      }]
+    });
 
-    const token = jwt.sign(
-      { id: user.id },
-      config.secret,
-      { expiresIn: '2h' }
-    );
+    if (!user) {
+      return res.status(401).json({ message: '用户名或密码错误' });
+    }
 
-    const refreshToken = jwt.sign(
-      { id: user.id },
-      config.secret,
-      { expiresIn: '7d' }
-    );
+    const isValidPassword = await user.comparePassword(password);
+    if (!isValidPassword) {
+      return res.status(401).json({ message: '用户名或密码错误' });
+    }
+
+    // 获取用户完整信息（包括角色的权限和路由）
+    const userInfo = await user.getFullInfo();
+
+    // 生成 token
+    const token = generateToken(userInfo);
 
     res.json({
       code: 200,
       data: {
-        token,
-        refreshToken,
-        expiresIn: 7200, // 2小时
-        user: {
-          // ... 用户信息
-        }
-      }
+        ...userInfo,
+        accessToken: token
+      },
+      message: '登录成功'
     });
   } catch (error) {
-    // ... 错误处理
+    console.error('Login error:', error);
+    res.status(500).json({ message: '服务器错误' });
   }
 };
 

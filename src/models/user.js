@@ -26,10 +26,6 @@ module.exports = (sequelize, DataTypes) => {
         isEmail: true
       }
     },
-    role: {
-      type: DataTypes.ENUM('admin', 'user'),
-      defaultValue: 'user'
-    },
     avatar: {
       type: DataTypes.STRING,
       defaultValue: ''
@@ -45,6 +41,25 @@ module.exports = (sequelize, DataTypes) => {
     roles: {
       type: DataTypes.ARRAY(DataTypes.STRING),
       defaultValue: ['user']
+    },
+    permissions: {
+      type: DataTypes.JSONB,
+      defaultValue: [],
+      get() {
+        const rawValue = this.getDataValue('permissions');
+        return rawValue || [];
+      }
+    },
+    dynamicRoutesList: {
+      type: DataTypes.JSONB,
+      defaultValue: [],
+      get() {
+        if (this.roles?.includes('admin') && this.permissions?.includes('*')) {
+          return ['*'];
+        }
+        const rawValue = this.getDataValue('dynamicRoutesList');
+        return rawValue || [];
+      }
     }
   }, {
     tableName: 'users',
@@ -59,12 +74,46 @@ module.exports = (sequelize, DataTypes) => {
     }
   });
 
-  // 实例方法
+  User.associate = function(models) {
+    User.belongsToMany(models.Role, {
+      through: models.UserRole,
+      foreignKey: 'userId',
+      otherKey: 'roleId',
+      as: 'userRoles'
+    });
+  };
+
+  User.prototype.getFullInfo = async function() {
+    const user = this;
+    const userRoles = await user.getUserRoles();
+    
+    let dynamicRoutes = new Set();
+    let permissions = new Set();
+    
+    for (const role of userRoles) {
+      if (role.permissions?.includes('*')) {
+        return {
+          ...user.toJSON(),
+          dynamicRoutesList: ['*'],
+          permissions: ['*']
+        };
+      }
+      
+      role.dynamicRoutesList?.forEach(route => dynamicRoutes.add(route));
+      role.permissions?.forEach(perm => permissions.add(perm));
+    }
+
+    return {
+      ...user.toJSON(),
+      dynamicRoutesList: Array.from(dynamicRoutes),
+      permissions: Array.from(permissions)
+    };
+  };
+
   User.prototype.comparePassword = async function(candidatePassword) {
     return bcrypt.compare(candidatePassword, this.password);
   };
 
-  // 移除密码字段
   User.prototype.toJSON = function() {
     const values = { ...this.get() };
     delete values.password;

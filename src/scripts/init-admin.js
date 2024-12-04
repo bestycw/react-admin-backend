@@ -1,39 +1,66 @@
 'use strict';
-
-const db = require('../models');
-require('dotenv').config();
+const { User, Role, UserRole, sequelize } = require('../models');
+const bcrypt = require('bcryptjs');
 
 async function initAdmin() {
   try {
-    // 同步数据库模型
-    await db.sequelize.sync({ force: true });
-    console.log('Database synchronized');
+    await sequelize.sync({ force: true });
+    await sequelize.transaction(async (t) => {
+      // 创建管理员角色
+      const adminRole = await Role.create({
+        name: '管理员',
+        description: '系统管理员',
+        code: 'admin',
+        status: 'active',
+        permissions: ['*'],
+        dynamicRoutesList: ['*']  // 管理员拥有所有路由权限
+      }, { transaction: t });
 
-    // 创建管理员用户
-    const admin = await db.User.create({
-      username: 'admin',
-      password: '123456',
-      email: 'admin@example.com',
-      roles: ['admin'],
-      status: 'active',
-      avatar: 'https://gw.alipayobjects.com/zos/rmsportal/BiazfanxmamNRoxxVxka.png'
+      // 创建管理员用户
+      const adminUser = await User.create({
+        username: 'admin',
+        password: '123456',
+        email: 'admin@example.com',
+        status: 'active',
+        roles: ['admin'],
+        permissions: ['*'],
+        dynamicRoutesList: ['*']  // 管理员用户也拥有所有路由权限
+      }, { transaction: t });
+
+      // 使用关联表直接创建关系
+      await UserRole.create({
+        userId: adminUser.id,
+        roleId: adminRole.id
+      }, { transaction: t });
+
+      // 创建普通用户角色
+      await Role.create({
+        name: '普通用户',
+        description: '普通用户',
+        code: 'user',
+        status: 'active',
+        permissions: ['dashboard:view'],
+        dynamicRoutesList: ['/dashboard']  // 普通用户只有仪表盘路由权限
+      }, { transaction: t });
+
+      console.log('Admin user and roles created successfully');
     });
 
-    console.log('Admin user created successfully:', admin.toJSON());
-    process.exit(0);
   } catch (error) {
-    console.error('Error creating admin user:', error);
-    process.exit(1);
+    console.error('Error creating admin:', error);
+    throw error;
   }
 }
 
-// 确认用户真的想要重置数据库
-console.log('\x1b[31m%s\x1b[0m', 'WARNING: This will delete all existing data in the database!');
-console.log('Press CTRL+C to cancel or wait 5 seconds to continue...');
+module.exports = initAdmin;
 
-setTimeout(() => {
-  initAdmin().catch(error => {
-    console.error('Failed to initialize admin:', error);
+// 如果直接运行此脚本
+if (require.main === module) {
+  initAdmin().then(() => {
+    console.log('Initialization completed');
+    process.exit(0);
+  }).catch(err => {
+    console.error('Initialization failed:', err);
     process.exit(1);
   });
-}, 5000); 
+} 

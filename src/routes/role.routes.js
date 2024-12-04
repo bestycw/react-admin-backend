@@ -3,6 +3,7 @@ const router = express.Router();
 const { auth, checkRole } = require('../middleware/auth.middleware');
 const { Role } = require('../models');
 const { Op } = require('sequelize');
+const { authJwt } = require('../middleware');
 
 // 获取角色列表
 router.get('/roles', auth, async (req, res) => {
@@ -73,7 +74,7 @@ router.post('/roles', auth, checkRole(['admin']), async (req, res) => {
 router.put('/roles/:id', auth, checkRole(['admin']), async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, code, description, status, permissions } = req.body;
+    const { name, code, description, status, permissions,dynamicRoutesList} = req.body;
 
     const role = await Role.findByPk(id);
     if (!role) {
@@ -99,7 +100,8 @@ router.put('/roles/:id', auth, checkRole(['admin']), async (req, res) => {
       code,
       description,
       status,
-      permissions
+      permissions,
+      dynamicRoutesList
     });
 
     res.json({
@@ -140,6 +142,58 @@ router.delete('/roles/:id', auth, checkRole(['admin']), async (req, res) => {
       code: 500,
       message: '删除角色失败',
       error: error.message
+    });
+  }
+});
+
+// 获取角色的动态路由
+router.get('/api/roles/routes/:roleCodes', [authJwt.verifyToken], async (req, res) => {
+  try {
+    const roleCodes = req.params.roleCodes.split(',');
+    
+    // 查找所有指定的角色
+    const roles = await Role.findAll({
+      where: {
+        code: {
+          [Op.in]: roleCodes
+        }
+      }
+    });
+
+    if (!roles.length) {
+      return res.status(404).json({
+        code: 404,
+        message: '未找到指定角色'
+      });
+    }
+
+    // 合并所有角色的动态路由，并去重
+    const dynamicRoutesList = new Set();
+    
+    for (const role of roles) {
+      // 如果有管理员角色且拥有 * 权限，直接返回 ['*']
+      if (role.code === 'admin' && role.permissions?.includes('*')) {
+        return res.json({
+          code: 200,
+          data: ['*'],
+          message: '获取成功'
+        });
+      }
+      
+      // 合并其他角色的路由
+      role.dynamicRoutesList?.forEach(route => dynamicRoutesList.add(route));
+    }
+
+    res.json({
+      code: 200,
+      data: Array.from(dynamicRoutesList),
+      message: '获取成功'
+    });
+  } catch (error) {
+    console.error('Get role routes error:', error);
+    res.status(500).json({
+      code: 500,
+      message: '服务器错误'
     });
   }
 });
