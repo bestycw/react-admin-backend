@@ -172,10 +172,10 @@ router.get('/api/roles/routes/:roleCodes', [authJwt.verifyToken], async (req, re
     
     for (const role of roles) {
       // 如果有管理员角色且拥有 * 权限，直接返回 ['*']
-      if (role.code === 'admin' && role.permissions?.includes('*')) {
+      if (role.code === 'admin' && role.permissions?.includes('/')) {
         return res.json({
           code: 200,
-          data: ['*'],
+          data: ['/'],
           message: '获取成功'
         });
       }

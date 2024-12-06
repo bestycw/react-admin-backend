@@ -13,6 +13,7 @@ const routes = require('./routes');
 const db = require('./models');
 const userRoutes = require('./routes/user.routes');
 const roleRoutes = require('./routes/role.routes');
+const dictRoutes = require('./routes/dict.routes');
 
 const app = express();
 const server = http.createServer(app);
@@ -40,7 +41,16 @@ app.set('wss', wss);
 app.use(cors({
   origin: 'http://localhost:5173',
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
+  allowedHeaders: [
+    'Content-Type', 
+    'Authorization',
+    'X-Refresh-Token',
+    'X-Access-Token'
+  ],
+  exposedHeaders: [
+    'X-Access-Token',
+    'X-Refresh-Token'
+  ],
   credentials: true
 }));
 
@@ -101,6 +111,7 @@ wss.on('connection', (ws) => {
 app.use('/api', routes(app));
 app.use('/api/users', userRoutes);
 app.use('/', roleRoutes);
+app.use('/api', dictRoutes);
 
 // 添加错误处理中间件
 app.use((err, req, res, next) => {
@@ -122,10 +133,17 @@ app.use((req, res) => {
 // 启动服务器
 const PORT = process.env.PORT || 3000;
 
-// 临时使用 force 选项重建表
-db.sequelize.sync({ force: true })
+const isDev = process.env.NODE_ENV === 'development';
+const shouldResetDB = process.env.RESET_DB === 'true';
+
+// 只在开发环境且明确要求重置时才使用 force: true
+db.sequelize.sync()
   .then(() => {
-    console.log('Database synced');
+    if (isDev && shouldResetDB) {
+      console.log('Database reset and synced');
+    } else {
+      console.log('Database synced');
+    }
     server.listen(PORT, () => {
       console.log(`Server is running on port ${PORT}`);
       console.log(`WebSocket server is running on ws://localhost:${PORT}/ws`);

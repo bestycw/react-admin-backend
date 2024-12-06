@@ -18,7 +18,7 @@ router.post('/send-code', authController.sendVerificationCode);
 router.post('/login', async (req, res) => {
   try {
     const { username, password } = req.body;
-    console.log('Login attempt:', { username });
+    // console.log('Login attempt:', { username });
 
     const user = await User.findOne({ 
       where: { 
@@ -96,7 +96,7 @@ router.post('/logout', auth, async (req, res) => {
     // 这里可以添加token黑名单等逻辑
     res.json({
       code: 200,
-      message: '退出成功'
+      message: '退出成'
     });
   } catch (error) {
     console.error('Logout error:', error);
@@ -203,7 +203,7 @@ router.put('/profile', auth, async (req, res) => {
       const existingUser = await User.findOne({
         where: {
           mobile: updateData.mobile,
-          id: { [Op.ne]: user.id } // 排除当前用户
+          id: { [Op.ne]: user.id } // 排���当前用户
         }
       });
       if (existingUser) {

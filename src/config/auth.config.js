@@ -1,4 +1,5 @@
 module.exports = {
-  secret: "your-secret-key", // 确保这个密钥与签发 token 时使用的密钥一致
-  jwtExpiration: 86400,      // 24 hours
+  secret: process.env.JWT_SECRET || "your-secret-key",
+  jwtExpiration: parseInt(process.env.JWT_ACCESS_TOKEN_EXPIRE) || 7200,
+  jwtRefreshExpiration: parseInt(process.env.JWT_REFRESH_TOKEN_EXPIRE) || 604800,
 }; 

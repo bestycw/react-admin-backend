@@ -13,7 +13,7 @@ async function initAdmin() {
         code: 'admin',
         status: 'active',
         permissions: ['*'],
-        dynamicRoutesList: ['*']  // 管理员拥有所有路由权限
+        dynamicRoutesList: ['/']  // 管理员拥有所有路由权限
       }, { transaction: t });
 
       // 创建管理员用户
@@ -24,7 +24,7 @@ async function initAdmin() {
         status: 'active',
         roles: ['admin'],
         permissions: ['*'],
-        dynamicRoutesList: ['*']  // 管理员用户也拥有所有路由权限
+        dynamicRoutesList: ['/']  // 管理员用户也拥有所有路由权限
       }, { transaction: t });
 
       // 使用关联表直接创建关系
