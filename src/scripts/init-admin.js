@@ -12,7 +12,7 @@ async function initAdmin() {
         description: '系统管理员',
         code: 'admin',
         status: 'active',
-        permissions: ['*'],
+        permissions:{},
         dynamicRoutesList: ['/']  // 管理员拥有所有路由权限
       }, { transaction: t });
 
@@ -23,7 +23,7 @@ async function initAdmin() {
         email: 'admin@example.com',
         status: 'active',
         roles: ['admin'],
-        permissions: ['*'],
+        permissions: null,
         dynamicRoutesList: ['/']  // 管理员用户也拥有所有路由权限
       }, { transaction: t });
 
@@ -39,7 +39,7 @@ async function initAdmin() {
         description: '普通用户',
         code: 'user',
         status: 'active',
-        permissions: ['dashboard:view'],
+        permissions: {},
         dynamicRoutesList: ['/dashboard']  // 普通用户只有仪表盘路由权限
       }, { transaction: t });
 

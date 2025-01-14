@@ -44,18 +44,18 @@ module.exports = (sequelize, DataTypes) => {
     },
     permissions: {
       type: DataTypes.JSONB,
-      defaultValue: [],
+      defaultValue: null,
       get() {
         const rawValue = this.getDataValue('permissions');
-        return rawValue || [];
+        return rawValue || {};
       }
     },
     dynamicRoutesList: {
       type: DataTypes.JSONB,
       defaultValue: [],
       get() {
-        if (this.roles?.includes('admin') && this.permissions?.includes('*')) {
-          return ['*'];
+        if (this.roles?.includes('admin')) {
+          return ['/'];
         }
         const rawValue = this.getDataValue('dynamicRoutesList');
         return rawValue || [];
@@ -88,25 +88,30 @@ module.exports = (sequelize, DataTypes) => {
     const userRoles = await user.getUserRoles();
     
     let dynamicRoutes = new Set();
-    let permissions = new Set();
+    let permissions = {};
     
     for (const role of userRoles) {
-      if (role.permissions?.includes('*')) {
+      if (role.code === 'admin') {
         return {
           ...user.toJSON(),
-          dynamicRoutesList: ['*'],
-          permissions: ['*']
+          dynamicRoutesList: ['/'],
+          permissions: {}
         };
       }
       
       role.dynamicRoutesList?.forEach(route => dynamicRoutes.add(route));
-      role.permissions?.forEach(perm => permissions.add(perm));
+      
+      if (role.permissions) {
+        Object.entries(role.permissions).forEach(([path, perms]) => {
+          permissions[path] = [...new Set([...(permissions[path] || []), ...perms])];
+        });
+      }
     }
 
     return {
       ...user.toJSON(),
       dynamicRoutesList: Array.from(dynamicRoutes),
-      permissions: Array.from(permissions)
+      permissions
     };
   };
 

@@ -39,7 +39,9 @@ app.set('wss', wss);
 
 // 中间件
 app.use(cors({
-  origin: 'http://localhost:5173',
+  origin: process.env.NODE_ENV === 'development' 
+    ? ['http://localhost:5174', 'http://localhost:3000', 'http://127.0.0.1:5173']
+    : process.env.ALLOWED_ORIGINS?.split(',') || '*',
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: [
     'Content-Type', 
@@ -109,9 +111,6 @@ wss.on('connection', (ws) => {
 
 // 路由
 app.use('/api', routes(app));
-app.use('/api/users', userRoutes);
-app.use('/', roleRoutes);
-app.use('/api', dictRoutes);
 
 // 添加错误处理中间件
 app.use((err, req, res, next) => {

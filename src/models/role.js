@@ -18,10 +18,10 @@ module.exports = (sequelize, DataTypes) => {
     },
     permissions: {
       type: DataTypes.JSONB,
-      defaultValue: [],
+      defaultValue: {},
       get() {
         const rawValue = this.getDataValue('permissions');
-        return rawValue || [];
+        return rawValue || {};
       }
     },
     status: {
@@ -33,10 +33,9 @@ module.exports = (sequelize, DataTypes) => {
       defaultValue: [],
       get() {
         const rawValue = this.getDataValue('dynamicRoutesList');
-        // 如果是管理员角色且权限为 ['*']，返回所有路由
-        if (this.getDataValue('code') === 'admin' && 
-            this.getDataValue('permissions')?.includes('*')) {
-          return ['*']; // 管理员返回 * 表示所有路由权限
+        // 如果是管理员角色，返回所有路由权限
+        if (this.getDataValue('code') === 'admin') {
+          return ['/'];
         }
         return rawValue || [];
       }
@@ -58,7 +57,7 @@ module.exports = (sequelize, DataTypes) => {
   // 添加一个获取默认路由的静态方法
   Role.getDefaultRoutes = function(roleCode) {
     const routesMap = {
-      admin: ['*'], // 管理员拥有所有路由权限
+      admin: ['/'], // 管理员拥有所有路由权限
       user: ['/dashboard'] // 普通用户只有仪表盘权限
     };
     return routesMap[roleCode] || [];

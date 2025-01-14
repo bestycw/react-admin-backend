@@ -3,10 +3,9 @@ const router = express.Router();
 const { auth, checkRole } = require('../middleware/auth.middleware');
 const { Role } = require('../models');
 const { Op } = require('sequelize');
-const { authJwt } = require('../middleware');
 
 // 获取角色列表
-router.get('/roles', auth, async (req, res) => {
+router.get('/', auth, async (req, res) => {
   try {
     const roles = await Role.findAll({
       order: [['createdAt', 'DESC']]
@@ -26,9 +25,9 @@ router.get('/roles', auth, async (req, res) => {
 });
 
 // 创建角色
-router.post('/roles', auth, checkRole(['admin']), async (req, res) => {
+router.post('/', auth, checkRole(['admin']), async (req, res) => {
   try {
-    const { name, code, description, status, permissions } = req.body;
+    const { name, code, description, status, permissions, dynamicRoutesList } = req.body;
 
     // 验证必填字段
     if (!name || !code) {
@@ -52,7 +51,8 @@ router.post('/roles', auth, checkRole(['admin']), async (req, res) => {
       code,
       description,
       status: status || 'active',
-      permissions: permissions || []
+      permissions: permissions || {},
+      dynamicRoutesList: dynamicRoutesList || []
     });
 
     res.json({
@@ -61,7 +61,7 @@ router.post('/roles', auth, checkRole(['admin']), async (req, res) => {
       message: '创建成功'
     });
   } catch (error) {
-    console.error('Create role error:', error);  // 添加错误日志
+    console.error('Create role error:', error);
     res.status(500).json({
       code: 500,
       message: '创建角色失败',
@@ -71,10 +71,10 @@ router.post('/roles', auth, checkRole(['admin']), async (req, res) => {
 });
 
 // 更新角色
-router.put('/roles/:id', auth, checkRole(['admin']), async (req, res) => {
+router.put('/:id', auth, checkRole(['admin']), async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, code, description, status, permissions,dynamicRoutesList} = req.body;
+    const { name, code, description, status, permissions, dynamicRoutesList } = req.body;
 
     const role = await Role.findByPk(id);
     if (!role) {
@@ -95,13 +95,14 @@ router.put('/roles/:id', auth, checkRole(['admin']), async (req, res) => {
       }
     }
 
+    // 更新角色
     await role.update({
       name,
       code,
       description,
       status,
-      permissions,
-      dynamicRoutesList
+      permissions: permissions || {},
+      dynamicRoutesList: dynamicRoutesList || []
     });
 
     res.json({
@@ -119,7 +120,7 @@ router.put('/roles/:id', auth, checkRole(['admin']), async (req, res) => {
 });
 
 // 删除角色
-router.delete('/roles/:id', auth, checkRole(['admin']), async (req, res) => {
+router.delete('/:id', auth, checkRole(['admin']), async (req, res) => {
   try {
     const { id } = req.params;
     const role = await Role.findByPk(id);
@@ -147,9 +148,9 @@ router.delete('/roles/:id', auth, checkRole(['admin']), async (req, res) => {
 });
 
 // 获取角色的动态路由
-router.get('/api/roles/routes/:roleCodes', [authJwt.verifyToken], async (req, res) => {
+router.get('/routes', auth, async (req, res) => {
   try {
-    const roleCodes = req.params.roleCodes.split(',');
+    const roleCodes = req.query.roles.split(',');
     
     // 查找所有指定的角色
     const roles = await Role.findAll({
@@ -171,8 +172,8 @@ router.get('/api/roles/routes/:roleCodes', [authJwt.verifyToken], async (req, re
     const dynamicRoutesList = new Set();
     
     for (const role of roles) {
-      // 如果有管理员角色且拥有 * 权限，直接返回 ['*']
-      if (role.code === 'admin' && role.permissions?.includes('/')) {
+      // 如果有管理员角色且拥有 / 权限，直接返回 ['/']
+      if (role.code === 'admin') {
         return res.json({
           code: 200,
           data: ['/'],
